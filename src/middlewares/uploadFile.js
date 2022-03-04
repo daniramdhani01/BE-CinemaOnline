@@ -1,19 +1,19 @@
 // import package here
 const multer = require('multer');
 
-exports.uploadFilm = (imageFile) => {
-    // console.log(imageFile)
+exports.uploadFilm = (imageFile, imageFile2) => {
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, 'uploads/film');
         },
         filename: function (req, file, cb) {
-            cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, ''));
+            cb(null, file.fieldname + '-' + Date.now() + '-' + file.originalname.replace(/\s/g, ''));
         },
     });
 
     const fileFilter = (req, file, cb) => {
-        if (file.fieldname === imageFile) {
+        // if (file.fieldname === imageFile && imageFile2) {
+        if (file.fieldname) {
             if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG)$/)) {
                 req.fileValidationError = {
                     message: 'Only image files are allowed!',
@@ -33,9 +33,11 @@ exports.uploadFilm = (imageFile) => {
         limits: {
             fileSize: maxSize,
         },
-    }).single(imageFile);
+        // }).single(imageFile);
+    }).fields([{ name: imageFile, maxCount: 1 }, { name: imageFile2, maxCount: 1 }])
 
     return (req, res, next) => {
+        // console.log(req.file)
         upload(req, res, function (err) {
             if (req.fileValidationError) {
                 return res.status(400).send(req.fileValidationError);

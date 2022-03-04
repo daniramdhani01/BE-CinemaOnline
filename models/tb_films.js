@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
   tb_films.init({
     title: DataTypes.STRING,
     thumbnail: DataTypes.STRING,
+    poster: DataTypes.STRING,
     category: DataTypes.STRING,
     price: DataTypes.BIGINT,
     link: DataTypes.STRING,

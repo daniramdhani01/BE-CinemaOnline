@@ -11,6 +11,7 @@ const {
     approve,
     reject,
     pending,
+    historyTransac,
 } = require('../controllers/transac')
 
 const {
@@ -43,11 +44,12 @@ router.get('/film', showFilm)
 router.get('/film/:id', showMyList)
 router.get('/film-delete/:id', deleteFilm)
 router.post('/detail-film/:id', selectFilm)
-router.post('/film', auth, uploadFilm('thumbnail'), addFilm)
-router.patch('/film/:id', auth, uploadFilm('thumbnail'), editFilm)
+router.post('/film', uploadFilm('thumbnail', 'poster'), addFilm)
+router.patch('/film/:id', auth, uploadFilm('thumbnail', 'poster'), editFilm)
 
 //transaction
 router.get('/transac', showTF)
+router.get('/transac/:id', historyTransac)
 router.post('/transac/:id', auth, uploadTransfer('image'), addTF)
 router.patch('/approve/:id', auth, approve)
 router.patch('/reject/:id', auth, reject)

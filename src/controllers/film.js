@@ -29,17 +29,30 @@ exports.addFilm = async (req, res) => {
             })
         }
 
-        if (!req.file) {
+        let addFilm
+
+        if (!req.files) {
             return res.send({
                 status: 'failed',
-                message: 'Please select files to upload',
+                message: 'Please select files to uploads',
+            })
+        } else if (!req.files.thumbnail) {
+            return res.send({
+                status: 'failed',
+                message: 'Please select thumbnail',
+            })
+        } else if (!req.files.poster) {
+            addFilm = await tb_films.create({
+                ...data,
+                thumbnail: req.files.thumbnail[0].filename,
+            })
+        } else {
+            addFilm = await tb_films.create({
+                ...data,
+                thumbnail: req.files.thumbnail[0].filename,
+                poster: req.files.poster[0].filename,
             })
         }
-
-        const addFilm = await tb_films.create({
-            ...data,
-            thumbnail: req.file.filename,
-        })
 
         const film = await tb_films.findOne({
             where: {
@@ -142,6 +155,7 @@ exports.showFilm = async (req, res) => {
 
         film.map((item) => {
             item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
+            item.poster = process.env.PATH_FILE_FILM + item.poster
             item.price = rupiah.convert(item.price)
         })
 

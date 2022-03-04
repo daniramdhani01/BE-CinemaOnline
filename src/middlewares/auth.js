@@ -17,7 +17,7 @@ exports.auth = (req, res, next) => {
 
         // console.log('jwt')
         req.user = verified;
-        console.log(req.user)
+        // console.log(req.user)
 
         next()
     } catch (error) {

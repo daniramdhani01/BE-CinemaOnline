@@ -1,5 +1,6 @@
 const joi = require('joi'); //package validation data
 const { tb_transac, tb_films, tb_users } = require('../../models')
+const rupiah = require('rupiah-format')
 
 exports.addTF = async (req, res) => {
     try {
@@ -56,6 +57,42 @@ exports.addTF = async (req, res) => {
             }
         })
 
+    } catch (err) {
+        res.send({
+            status: 'failed',
+            message: 'server error'
+        })
+    }
+}
+
+exports.historyTransac = async (req, res) => {
+    try {
+        const { id } = req.params
+        const transac = await tb_transac.findAll({
+            where: {
+                idUser: id
+            },
+            include: {
+                model: tb_films,
+                as: 'film',
+                attributes: ['title', 'price']
+            }
+        })
+
+        transac.sort((a, b) => {
+            return b.createdAt - a.createdAt
+        })
+
+        transac.map((item) => {
+            item.film.price = rupiah.convert(item.film.price)
+        })
+
+        res.send({
+            status: 'success',
+            data: {
+                transac
+            }
+        })
     } catch (err) {
         res.send({
             status: 'failed',
