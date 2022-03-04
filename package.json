@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "client": "npm start --prefix ../nis-online-cinema",
-    "dev": "concurrently \"npm start\" \"npm run client\""
+    "start": "node index.js"
   },
   "author": "dani",
   "license": "ISC",
