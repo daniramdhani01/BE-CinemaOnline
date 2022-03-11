@@ -154,8 +154,8 @@ exports.showFilm = async (req, res) => {
         })
 
         film.map((item) => {
-            item.thumbnail = process.env.PATH_FILE_Film + item.thumbnail
-            item.poster = process.env.PATH_FILE_Film + item.poster
+            item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
+            item.poster = process.env.PATH_FILE_FILM + item.poster
             item.price = rupiah.convert(item.price)
         })
 
