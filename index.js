@@ -9,6 +9,9 @@ app.use(express.json())
 app.use(cors())
 app.use('/api/v1/', router);
 app.use('/uploads/', express.static('uploads'))
+app.use('/uploads/film', express.static('film'))
+app.use('/uploads/photoProfile', express.static('photoProfile'))
+app.use('/uploads/transfer', express.static('transfer'))
 
 const port = process.env.PORT || 5000
 
