@@ -158,8 +158,8 @@ exports.showFilm = async (req, res) => {
         console.log(process.env.TOKEN_KEY)
 
         film.map((item) => {
-            item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
-            item.poster = process.env.PATH_FILE_FILM + item.poster
+            item.thumbnail = 'be-cinema-online.herokuapp.com/uploads/film/' + item.thumbnail
+            item.poster = 'be-cinema-online.herokuapp.com/uploads/film/' + item.poster
             item.price = rupiah.convert(item.price)
         })
 
