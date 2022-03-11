@@ -153,6 +153,9 @@ exports.showFilm = async (req, res) => {
             return b.createdAt - a.createdAt
         })
 
+        console.log('path here..')
+        console.log(process.env.PATH_FILE_FILM)
+
         film.map((item) => {
             item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
             item.poster = process.env.PATH_FILE_FILM + item.poster
