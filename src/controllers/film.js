@@ -155,6 +155,7 @@ exports.showFilm = async (req, res) => {
 
         console.log('process here..')
         console.log(process.env.PATH_FILE_FILM)
+        console.log(process.env.TOKEN_KEY)
 
         film.map((item) => {
             item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
