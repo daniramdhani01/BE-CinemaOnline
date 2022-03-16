@@ -43,7 +43,18 @@ exports.uploadFilm = (imageFile, imageFile2) => {
                 return res.status(400).send(req.fileValidationError);
             }
 
-            if (!req.file && !err) {
+            if (!req.files && !err) {
+                if (!req.files) {
+                    return res.send({
+                        status: 'failed',
+                        message: 'Please select files to uploads',
+                    })
+                } else if (!req.files.thumbnail) {
+                    return res.send({
+                        status: 'failed',
+                        message: 'Please select thumbnail',
+                    })
+                }
                 return next()
                 // return res.status(400).send({
                 //     status: 'failed',
@@ -104,6 +115,7 @@ exports.uploadTransfer = (imageFile) => {
                 return res.send(req.fileValidationError);
             }
 
+            console.log(req.file)
             if (!req.file && !err) {
                 // return next()
                 return res.send({

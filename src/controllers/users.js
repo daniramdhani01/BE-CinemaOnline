@@ -2,6 +2,8 @@ const joi = require('joi'); //package validation data
 const bcrypt = require('bcrypt') //package encryption data
 const jwt = require('jsonwebtoken') //package token
 const { tb_users } = require('../../models')
+const cloudinary = require("../utils/cloudinary");
+
 // ===============
 // register
 // ===============

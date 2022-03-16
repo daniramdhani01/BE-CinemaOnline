@@ -1,6 +1,8 @@
 const joi = require('joi'); //package validation data
 const { tb_films, tb_transac } = require('../../models')
 const rupiah = require('rupiah-format')
+const cloudinary = require("../utils/cloudinary");
+
 // ============
 // add film
 // ============
@@ -8,8 +10,9 @@ exports.addFilm = async (req, res) => {
     try {
 
         const data = req.body
-        // console.log(req.file)
-        // console.log(data)
+
+        console.log(req.files)
+
         const schema = joi.object({
             title: joi.string().required(),
             category: joi.string().required(),
@@ -31,27 +34,36 @@ exports.addFilm = async (req, res) => {
 
         let addFilm
 
-        if (!req.files) {
-            return res.send({
-                status: 'failed',
-                message: 'Please select files to uploads',
-            })
-        } else if (!req.files.thumbnail) {
-            return res.send({
-                status: 'failed',
-                message: 'Please select thumbnail',
-            })
-        } else if (!req.files.poster) {
+        if (!req.files.poster) {
             addFilm = await tb_films.create({
                 ...data,
                 thumbnail: req.files.thumbnail[0].filename,
             })
+
+            const result = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
+                folder: "cinema-online/film",
+                use_filename: true,
+                unique_filename: false,
+            });
+
         } else {
             addFilm = await tb_films.create({
                 ...data,
                 thumbnail: req.files.thumbnail[0].filename,
                 poster: req.files.poster[0].filename,
             })
+
+            const result = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
+                folder: "cinema-online/film",
+                use_filename: true,
+                unique_filename: false,
+            });
+
+            const resultPoster = await cloudinary.uploader.upload(req.files.poster[0].path, {
+                folder: "cinema-online/film",
+                use_filename: true,
+                unique_filename: false,
+            });
         }
 
         const film = await tb_films.findOne({

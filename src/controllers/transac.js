@@ -1,6 +1,7 @@
 const joi = require('joi'); //package validation data
 const { tb_transac, tb_films, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
+const cloudinary = require("../utils/cloudinary");
 
 exports.addTF = async (req, res) => {
     try {
@@ -49,6 +50,12 @@ exports.addTF = async (req, res) => {
             accountNum: data.accountNum,
             buktiTF: req.file.filename
         })
+
+        const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: "cinema-online/transfer",
+            use_filename: true,
+            unique_filename: false,
+        });
 
         res.send({
             status: 'success',
