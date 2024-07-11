@@ -6,7 +6,7 @@ const cloudinary = require("../utils/cloudinary");
 exports.addTF = async (req, res) => {
     try {
         const data = req.body
-        const { id } = req.params
+        const { id } = req.user
 
         const schema = joi.object({
             idFilm: joi.string().required(),
@@ -74,7 +74,8 @@ exports.addTF = async (req, res) => {
 
 exports.historyTransac = async (req, res) => {
     try {
-        const { id } = req.params
+        const { id } = req.user
+
         const transac = await tb_transac.findAll({
             where: {
                 idUser: id
@@ -83,12 +84,13 @@ exports.historyTransac = async (req, res) => {
                 model: tb_films,
                 as: 'film',
                 attributes: ['title', 'price']
-            }
+            },
+            order: [['createdAt', 'DESC']]
         })
 
-        transac.sort((a, b) => {
-            return b.createdAt - a.createdAt
-        })
+        // transac.sort((a, b) => {
+        //     return b.createdAt - a.createdAt
+        // })
 
         transac.map((item) => {
             item.film.price = rupiah.convert(item.film.price)

@@ -40,7 +40,10 @@ exports.uploadFilm = (imageFile, imageFile2) => {
         // console.log(req.file)
         upload(req, res, function (err) {
             if (req.fileValidationError) {
-                return res.status(400).send(req.fileValidationError);
+                return res.status(400).send({
+                    status: 'failed',
+                    ...req.fileValidationError
+                });
             }
 
             if (!req.files && !err) {

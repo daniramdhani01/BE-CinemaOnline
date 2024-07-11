@@ -20,7 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     category: DataTypes.STRING,
     price: DataTypes.BIGINT,
     link: DataTypes.STRING,
-    desc: DataTypes.TEXT
+    desc: DataTypes.TEXT,
+    createdAt: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'tb_films',

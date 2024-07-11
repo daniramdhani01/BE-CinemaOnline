@@ -9,14 +9,14 @@ const cloudinary = require("../utils/cloudinary");
 // ===============
 exports.showUser = async (req, res) => {
     try {
-        const { id } = req.params
+        const { email } = req.user
 
         let user = await tb_users.findOne({
             where: {
-                id
+                email
             },
             attributes: {
-                exclude: ['password']
+                exclude: ['password','id','createdAt','updatedAt']
             }
         })
 
@@ -143,9 +143,6 @@ exports.loginUser = async (req, res) => {
             }
         })
 
-        // console.log(data)
-        // console.log(userExist)
-
         if (!userExist) {
             return res.send({
                 status: 'failed',
@@ -163,7 +160,7 @@ exports.loginUser = async (req, res) => {
         }
 
         const dataToken = {
-            id: userExist.id,
+            // id: userExist.id,
             fullname: userExist.fullname,
             email: userExist.email,
             isAdmin: userExist.isAdmin,
@@ -172,12 +169,11 @@ exports.loginUser = async (req, res) => {
         const SECRET_KEY = process.env.TOKEN_KEY
         const token = jwt.sign(dataToken, SECRET_KEY)
 
-        console.log(dataToken)
         res.send({
             status: 'success',
             data: {
                 user: {
-                    id: userExist.id,
+                    // id: userExist.id,
                     fullname: userExist.fullname,
                     email: userExist.email,
                     isAdmin: userExist.isAdmin,
@@ -252,14 +248,15 @@ exports.editUser = async (req, res) => {
 exports.checkAuth = async (req, res) => {
     try {
         const { email } = req.user;
-
+        
         const user = await tb_users.findOne({
             where: {
                 email,
             }
         });
-
+        
         if (!user) {
+            res.status(404)
             return res.send({
                 status: "failed",
             });
@@ -269,15 +266,16 @@ exports.checkAuth = async (req, res) => {
             status: "success",
             data: {
                 user: {
-                    id: user.id,
+                    // id: user.id,
                     fullname: user.fullname,
+                    isAdmin: user.isAdmin,
                     email: user.email,
-                    // image: process.env.PATH_FILE + user.image,
+                    image: process.env.PATH_FILE + user.image,
                 }
             },
         });
     } catch (error) {
-        console.log(error);
+        res.status(500)
         res.status({
             status: "failed",
             message: "Server Error",

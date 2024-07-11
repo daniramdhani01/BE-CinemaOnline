@@ -1,12 +1,14 @@
 const jwt = require('jsonwebtoken')
+const { tb_users } = require('../../models')
 
-exports.auth = (req, res, next) => {
+exports.auth = async (req, res, next) => {
     try {
         const authHeader = req.header('Authorization')
         const token = authHeader && authHeader.split(' ')[1]
 
         if (!token) {
             return res.send({
+                status: 'failed',
                 message: 'Access denied!'
             });
         }
@@ -15,10 +17,12 @@ exports.auth = (req, res, next) => {
 
         const verified = jwt.verify(token, SECRET_KEY) //data user in token
 
-        // console.log('jwt')
-        req.user = verified;
-        // console.log(req.user)
+        const { id } = await tb_users.findOne({
+            where: { email:  verified.email}
+        })
 
+        req.user = {...verified, id};
+        
         next()
     } catch (error) {
         res.send({

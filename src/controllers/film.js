@@ -82,7 +82,8 @@ exports.addFilm = async (req, res) => {
     } catch (err) {
         res.send({
             status: 'failed',
-            message: 'server error'
+            // message: 'server error'
+            message: err
         })
     }
 }
@@ -159,11 +160,15 @@ exports.editFilm = async (req, res) => {
 // ============
 exports.showFilm = async (req, res) => {
     try {
-        const film = await tb_films.findAll()
-
-        film.sort((a, b) => {
-            return b.createdAt - a.createdAt
+        const film = await tb_films.findAll({
+            order: [
+                ['createdAt', 'ASC']  // Ubah 'name' dengan kolom yang ingin diurutkan
+              ]
         })
+
+        // film.sort((a, b) => {
+        //     return b.createdAt - a.createdAt
+        // })
 
         film.map((item) => {
             item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
@@ -178,9 +183,11 @@ exports.showFilm = async (req, res) => {
             }
         })
     } catch (err) {
+        
+        res.status(500)
         res.send({
             status: 'failed',
-            message: 'server error'
+            message: err.message ?? 'server error'
         })
     }
 }
@@ -191,27 +198,36 @@ exports.showFilm = async (req, res) => {
 exports.selectFilm = async (req, res) => {
     try {
         const { id } = req.params
-        const { iduser } = req.body
-        let status = '-'
+        const { authorization = false } = req.headers
 
-        let film = await tb_films.findOne({
-            where: { id }
-        })
+        let status = '-'
+        let film = {}
+        await Promise.all([
+            tb_films.findOne({where: { id }}).then((res)=> film = res),
+
+            async()=>{
+                if (authorization) {
+                const token = authorization.split(' ')[1]
+                const SECRET_KEY = process.env.TOKEN_KEY
+                const verified = jwt.verify(token, SECRET_KEY) //data user in token
+                const { id } = await tb_users.findOne({
+                    where: { email:  verified.email}
+                })
+                let data = await tb_transac.findOne({
+                    where: {
+                        iduser,
+                        idFilm: id,
+                    }
+                })
+                if (data) {
+                    status = data.status
+                }
+                }
+            }
+        ])
 
         film.thumbnail = process.env.PATH_FILE_FILM + film.thumbnail
         film.price = rupiah.convert(film.price)
-
-        if (iduser) {
-            let data = await tb_transac.findOne({
-                where: {
-                    iduser,
-                    idFilm: id,
-                }
-            })
-            if (data) {
-                status = data.status
-            }
-        }
 
         res.send({
             status: 'success',
@@ -233,7 +249,7 @@ exports.selectFilm = async (req, res) => {
 // ============
 exports.showMyList = async (req, res) => {
     try {
-        const { id } = req.params
+        const { id } = req.user
         const mylist = await tb_transac.findAll({
             where: {
                 iduser: id,
