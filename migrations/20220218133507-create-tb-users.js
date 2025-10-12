@@ -1,7 +1,8 @@
 'use strict';
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('tb_users', {
+    await queryInterface.sequelize.query('CREATE SCHEMA IF NOT EXISTS "cinema_online";');
+    await queryInterface.createTable({ schema: 'cinema_online', tableName: 'tb_users' }, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -43,6 +44,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('tb_users');
+    await queryInterface.dropTable({ schema: 'cinema_online', tableName: 'tb_users' });
   }
 };

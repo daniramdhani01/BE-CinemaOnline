@@ -1,7 +1,8 @@
 'use strict';
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('tb_transacs', {
+    await queryInterface.sequelize.query('CREATE SCHEMA IF NOT EXISTS "cinema_online";');
+    await queryInterface.createTable({ schema: 'cinema_online', tableName: 'tb_transacs' }, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -12,7 +13,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER,
         references: {
-          model: "tb_users",
+          model: { schema: 'cinema_online', tableName: 'tb_users' },
           key: "id"
         },
         onUpdate: "CASCADE",
@@ -22,7 +23,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER,
         references: {
-          model: "tb_films",
+          model: { schema: 'cinema_online', tableName: 'tb_films' },
           key: "id"
         },
         onUpdate: "CASCADE",
@@ -54,6 +55,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('tb_transacs');
+    await queryInterface.dropTable({ schema: 'cinema_online', tableName: 'tb_transacs' });
   }
 };
