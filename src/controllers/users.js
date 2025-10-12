@@ -3,12 +3,12 @@ const bcrypt = require('bcrypt') //package encryption data
 const jwt = require('jsonwebtoken') //package token
 const { tb_users } = require('../../models')
 const cloudinary = require("../utils/cloudinary");
+const { withErrorLogging } = require('../middlewares/logger');
 
 // ===============
 // register
 // ===============
-exports.showUser = async (req, res) => {
-    try {
+exports.showUser = withErrorLogging(async (req, res) => {
         const { email } = req.user
 
         let user = await tb_users.findOne({
@@ -29,19 +29,12 @@ exports.showUser = async (req, res) => {
             }
         })
 
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'showUser');
 
 // ===============
 // register
 // ===============
-exports.regUser = async (req, res) => {
-    try {
+exports.regUser = withErrorLogging(async (req, res) => {
         const data = req.body
         const schema = joi.object({
             email: joi.string().email().required(),
@@ -104,18 +97,11 @@ exports.regUser = async (req, res) => {
                 },
             },
         });
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'regUser');
 // ===============
 // login
 // ===============
-exports.loginUser = async (req, res) => {
-    try {
+exports.loginUser = withErrorLogging(async (req, res) => {
         const data = req.body
         // console.log(data)
         const schema = joi.object({
@@ -182,18 +168,11 @@ exports.loginUser = async (req, res) => {
                 },
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error',
-        })
-    }
-}
+}, 'loginUser');
 // ===============
 // edit user
 // ===============
-exports.editUser = async (req, res) => {
-    try {
+exports.editUser = withErrorLogging(async (req, res) => {
         const id = req.params.id
         const newData = req.body
 
@@ -237,16 +216,9 @@ exports.editUser = async (req, res) => {
                 }
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'editUser');
 
-exports.checkAuth = async (req, res) => {
-    try {
+exports.checkAuth = withErrorLogging(async (req, res) => {
         const { email } = req.user;
         
         const user = await tb_users.findOne({
@@ -274,11 +246,4 @@ exports.checkAuth = async (req, res) => {
                 }
             },
         });
-    } catch (error) {
-        res.status(500)
-        res.status({
-            status: "failed",
-            message: "Server Error",
-        });
-    }
-};
+}, 'checkAuth');

@@ -2,12 +2,12 @@ const joi = require('joi'); //package validation data
 const { tb_films, tb_transac } = require('../../models')
 const rupiah = require('rupiah-format')
 const cloudinary = require("../utils/cloudinary");
+const { withErrorLogging } = require('../middlewares/logger');
 
 // ============
 // add film
 // ============
-exports.addFilm = async (req, res) => {
-    try {
+exports.addFilm = withErrorLogging(async (req, res) => {
 
         const data = req.body
 
@@ -79,20 +79,12 @@ exports.addFilm = async (req, res) => {
             }
         })
 
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            // message: 'server error'
-            message: err
-        })
-    }
-}
+}, 'addFilm');
 
 // ============
 // Edit Film
 // ============
-exports.editFilm = async (req, res) => {
-    try {
+exports.editFilm = withErrorLogging(async (req, res) => {
         const { id } = req.params
         const data = req.body
         const schema = joi.object({
@@ -147,19 +139,12 @@ exports.editFilm = async (req, res) => {
             }
         })
 
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'editFilm');
 
 // ============
 // show Film
 // ============
-exports.showFilm = async (req, res) => {
-    try {
+exports.showFilm = withErrorLogging(async (req, res) => {
         const film = await tb_films.findAll({
             order: [
                 ['createdAt', 'ASC']  // Ubah 'name' dengan kolom yang ingin diurutkan
@@ -182,21 +167,12 @@ exports.showFilm = async (req, res) => {
                 film
             }
         })
-    } catch (err) {
-        
-        res.status(500)
-        res.send({
-            status: 'failed',
-            message: err.message ?? 'server error'
-        })
-    }
-}
+}, 'showFilm');
 
 // ============
 // select Film
 // ============
-exports.selectFilm = async (req, res) => {
-    try {
+exports.selectFilm = withErrorLogging(async (req, res) => {
         const { id } = req.params
         const { authorization = false } = req.headers
 
@@ -236,19 +212,12 @@ exports.selectFilm = async (req, res) => {
                 film,
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'selectFilm');
 
 // ============
 // show My list film
 // ============
-exports.showMyList = async (req, res) => {
-    try {
+exports.showMyList = withErrorLogging(async (req, res) => {
         const { id } = req.user
         const mylist = await tb_transac.findAll({
             where: {
@@ -276,19 +245,12 @@ exports.showMyList = async (req, res) => {
                 mylist
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'showMyList');
 
 // ============
 // delete movie
 // ============
-exports.deleteFilm = async (req, res) => {
-    try {
+exports.deleteFilm = withErrorLogging(async (req, res) => {
         const { id } = req.params
 
         await tb_films.destroy({
@@ -300,10 +262,4 @@ exports.deleteFilm = async (req, res) => {
             message: 'film has been delete'
         })
 
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'deleteFilm');

@@ -2,9 +2,9 @@ const joi = require('joi'); //package validation data
 const { tb_transac, tb_films, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
 const cloudinary = require("../utils/cloudinary");
+const { withErrorLogging } = require('../middlewares/logger');
 
-exports.addTF = async (req, res) => {
-    try {
+exports.addTF = withErrorLogging(async (req, res) => {
         const data = req.body
         const { id } = req.user
 
@@ -64,16 +64,9 @@ exports.addTF = async (req, res) => {
             }
         })
 
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'addTF');
 
-exports.historyTransac = async (req, res) => {
-    try {
+exports.historyTransac = withErrorLogging(async (req, res) => {
         const { id } = req.user
 
         const transac = await tb_transac.findAll({
@@ -102,16 +95,9 @@ exports.historyTransac = async (req, res) => {
                 transac
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'historyTransac');
 
-exports.showTF = async (req, res) => {
-    try {
+exports.showTF = withErrorLogging(async (req, res) => {
         const transac = await tb_transac.findAll(
             {
                 include: [
@@ -143,16 +129,9 @@ exports.showTF = async (req, res) => {
                 transac
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'showTF');
 
-exports.approve = async (req, res) => {
-    try {
+exports.approve = withErrorLogging(async (req, res) => {
         const { id } = req.params
 
         const newData = await tb_transac.update(
@@ -172,16 +151,9 @@ exports.approve = async (req, res) => {
                 transac
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'approve');
 
-exports.reject = async (req, res) => {
-    try {
+exports.reject = withErrorLogging(async (req, res) => {
         const { id } = req.params
 
         const newData = await tb_transac.update(
@@ -201,16 +173,9 @@ exports.reject = async (req, res) => {
                 transac
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'reject');
 
-exports.pending = async (req, res) => {
-    try {
+exports.pending = withErrorLogging(async (req, res) => {
         const { id } = req.params
 
         const newData = await tb_transac.update(
@@ -230,10 +195,4 @@ exports.pending = async (req, res) => {
                 transac
             }
         })
-    } catch (err) {
-        res.send({
-            status: 'failed',
-            message: 'server error'
-        })
-    }
-}
+}, 'pending');
