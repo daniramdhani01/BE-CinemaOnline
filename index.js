@@ -1,14 +1,17 @@
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
-const router = require('./src/routes');
+const router = require('./src/routes')
+const { logger, errorLogger } = require('./src/middlewares/logger')
 
 const app = express()
 
 app.use(express.json())
 app.use(cors())
-app.use('/api/v1/', router);
+app.use(logger)
+app.use('/api/v1/', router)
 app.use('/uploads/', express.static('uploads'))
+app.use(errorLogger)
 
 const port = process.env.PORT || 5000
 
