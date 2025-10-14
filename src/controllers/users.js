@@ -47,7 +47,7 @@ exports.regUser = withErrorLogging(async (req, res) => {
 
         //if error exist send validation error message}
         if (error) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: error.details[0].message
             })
@@ -60,7 +60,7 @@ exports.regUser = withErrorLogging(async (req, res) => {
         })
 
         if (userExist) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'user has been register'
             })
@@ -114,7 +114,7 @@ exports.loginUser = withErrorLogging(async (req, res) => {
 
         //if error exist send validation error message}
         if (error) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: error.details[0].message
             })
@@ -130,7 +130,7 @@ exports.loginUser = withErrorLogging(async (req, res) => {
         })
 
         if (!userExist) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'Email not register'
             })
@@ -139,7 +139,7 @@ exports.loginUser = withErrorLogging(async (req, res) => {
         const isValid = await bcrypt.compare(data.password, userExist.password)
 
         if (isValid == false) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'Email & password not match'
             })
@@ -228,8 +228,7 @@ exports.checkAuth = withErrorLogging(async (req, res) => {
         });
         
         if (!user) {
-            res.status(404)
-            return res.send({
+            return res.status(400).send({
                 status: "failed",
             });
         }

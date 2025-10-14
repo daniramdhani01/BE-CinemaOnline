@@ -48,12 +48,12 @@ exports.uploadFilm = (imageFile, imageFile2) => {
 
             if (!req.files && !err) {
                 if (!req.files) {
-                    return res.send({
+                    return res.status(400).send({
                         status: 'failed',
                         message: 'Please select files to uploads',
                     })
                 } else if (!req.files.thumbnail) {
-                    return res.send({
+                    return res.status(400).send({
                         status: 'failed',
                         message: 'Please select thumbnail',
                     })
@@ -121,7 +121,7 @@ exports.uploadTransfer = (imageFile) => {
             console.log(req.file)
             if (!req.file && !err) {
                 // return next()
-                return res.send({
+                return res.status(400).send({
                     status: 'failed',
                     message: 'Please select files to upload',
                 });
@@ -129,7 +129,7 @@ exports.uploadTransfer = (imageFile) => {
 
             if (err) {
                 if (err.code == 'LIMIT_FILE_SIZE') {
-                    return res.send({
+                    return res.status(400).send({
                         status: 'failed',
                         message: `Max file sized ${sizeInMb}Mb`,
                     });

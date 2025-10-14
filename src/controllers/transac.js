@@ -17,14 +17,14 @@ exports.addTF = withErrorLogging(async (req, res) => {
 
         //if error exist send validation error message}
         if (error) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: error.details[0].message
             })
         }
 
         if (!id) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'Please login',
             })
@@ -38,7 +38,7 @@ exports.addTF = withErrorLogging(async (req, res) => {
         })
 
         if (dataExist) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'movie its already on your list'
             })
@@ -71,7 +71,7 @@ exports.historyTransac = withErrorLogging(async (req, res) => {
 
         const transac = await tb_transac.findAll({
             where: {
-                idUser: id
+                iduser: id
             },
             include: {
                 model: tb_films,

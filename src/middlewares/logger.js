@@ -57,12 +57,12 @@ const withErrorLogging = (handler, context) => async (req, res, next) => {
     if (res.headersSent) {
       return next(err);
     }
-    const statusCode = err?.statusCode || err?.status || 500;
-    res.status(statusCode);
+    const message =
+      typeof err === 'string' ? err : err?.message || 'server error';
+    res.status(400);
     res.send({
       status: 'failed',
-      message:
-        typeof err === 'string' ? err : err?.message || 'server error',
+      message,
     });
   }
 };

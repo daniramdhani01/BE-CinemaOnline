@@ -7,7 +7,7 @@ exports.auth = async (req, res, next) => {
         const token = authHeader && authHeader.split(' ')[1]
 
         if (!token) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: 'Access denied!'
             });
@@ -25,7 +25,8 @@ exports.auth = async (req, res, next) => {
         
         next()
     } catch (error) {
-        res.send({
+        return res.status(400).send({
+            status: 'failed',
             message: 'invalid token'
         })
     }

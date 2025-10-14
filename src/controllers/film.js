@@ -1,5 +1,6 @@
+const jwt = require('jsonwebtoken');
 const joi = require('joi'); //package validation data
-const { tb_films, tb_transac } = require('../../models')
+const { tb_films, tb_transac, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
 const cloudinary = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
@@ -26,7 +27,7 @@ exports.addFilm = withErrorLogging(async (req, res) => {
 
         //if error exist send validation error message}
         if (error) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: error.details[0].message
             })
@@ -100,7 +101,7 @@ exports.editFilm = withErrorLogging(async (req, res) => {
 
         //if error exist send validation error message}
         if (error) {
-            return res.send({
+            return res.status(400).send({
                 status: 'failed',
                 message: error.details[0].message
             })
@@ -181,25 +182,25 @@ exports.selectFilm = withErrorLogging(async (req, res) => {
         await Promise.all([
             tb_films.findOne({where: { id }}).then((res)=> film = res),
 
-            async()=>{
+            (async()=>{
                 if (authorization) {
-                const token = authorization.split(' ')[1]
-                const SECRET_KEY = process.env.TOKEN_KEY
-                const verified = jwt.verify(token, SECRET_KEY) //data user in token
-                const { id } = await tb_users.findOne({
-                    where: { email:  verified.email}
-                })
-                let data = await tb_transac.findOne({
-                    where: {
-                        iduser,
-                        idFilm: id,
+                    const token = authorization.split(' ')[1]
+                    const SECRET_KEY = process.env.TOKEN_KEY
+                    const verified = jwt.verify(token, SECRET_KEY) //data user in token
+                    const { id: iduser } = await tb_users.findOne({
+                        where: { email:  verified.email}
+                    })
+                    let data = await tb_transac.findOne({
+                        where: {
+                            iduser,
+                            idFilm: id,
+                        }
+                    })
+                    if (data) {
+                        status = data.status
                     }
-                })
-                if (data) {
-                    status = data.status
                 }
-                }
-            }
+            })()
         ])
 
         film.thumbnail = process.env.PATH_FILE_FILM + film.thumbnail
