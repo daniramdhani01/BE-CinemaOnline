@@ -151,7 +151,7 @@ jobs:
             # --health-interval=60s \
             # --health-timeout=10s \
             # --health-retries=3 \
-            --restart unless-stopped \
+            # --restart unless-stopped \
             --label logging=promtail \
             --label promtail.enable=true \
             --label environment=production \
