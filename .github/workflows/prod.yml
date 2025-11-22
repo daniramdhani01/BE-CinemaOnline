@@ -121,12 +121,12 @@ jobs:
             FULL_IMAGE=${{ env.DOCKER_IMAGE }}:latest
           fi
 
-          if docker container inspect kedinasan-backend-dev >/dev/null 2>&1; then
+          if docker container inspect cinema-online-be-prod >/dev/null 2>&1; then
             echo "🛑 Stopping and removing existing container..."
-            docker container stop kedinasan-backend-dev
-            docker container rm kedinasan-backend-dev
+            docker container stop cinema-online-be-prod
+            docker container rm cinema-online-be-prod
           else
-            echo "✅ No existing container named kedinasan-backend-dev found."
+            echo "✅ No existing container named cinema-online-be-prod found."
           fi
 
           docker run -d \
