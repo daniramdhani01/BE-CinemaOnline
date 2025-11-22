@@ -146,12 +146,7 @@ jobs:
             -e CLOUDINARY_API_KEY='${{ secrets.CLOUDINARY_API_KEY }}' \
             -e CLOUDINARY_API_SECRET='${{ secrets.CLOUDINARY_API_SECRET }}' \
             -p ${{ vars.PORT }}:3000 \
-            # -v "${{ vars.LOG_DIR }}:${{vars.LOG_DIR}}" \
-            # --health-cmd='curl --fail http://localhost:3000/api/v1/healtcheck || exit 1' \
-            # --health-interval=60s \
-            # --health-timeout=10s \
-            # --health-retries=3 \
-            # --restart unless-stopped \
+            --restart unless-stopped \
             --label logging=promtail \
             --label promtail.enable=true \
             --label environment=production \
