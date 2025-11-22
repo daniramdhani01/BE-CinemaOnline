@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "client": "npm start --prefix ../nis-online-cinema",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "migrate": "sequelize db:migrate --config config/config.js --migrations-path migrations"
   },
   "author": "dani",
   "license": "ISC",

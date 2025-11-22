@@ -20,7 +20,7 @@ async function ensureSchema(config) {
     host: config.host,
     port: config.port,
     database: config.database,
-    ssl: config?.dialectOptions?.ssl,
+    ssl: config?.dialectOptions?.ssl || false,
   });
 
   try {
@@ -45,10 +45,10 @@ const shared = {
         schema: DEFAULT_SCHEMA,
     },
     dialectOptions: {
-        ssl: {
-            require: true,
-            rejectUnauthorized: false,
-        },
+        // ssl: {
+        //     require: true,
+        //     rejectUnauthorized: false,
+        // },
         keepAlive: true
     },
     pool: { max: 5, min: 0, acquire: 20000, idle: 10000, evict: 10000 },
