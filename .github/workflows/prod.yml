@@ -1,0 +1,163 @@
+name: Cinema Online Deployment
+
+on:
+  push:
+    tags: [v*]
+    branches: [master]
+
+env:
+  NODE_VERSION: 22.15.0
+  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/BE-CinemaOnline
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  initial-setup:
+    name: Unit Testing
+    runs-on: ubuntu-latest
+    environment: Production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # - name: Install dependencies
+      #   run: |
+      #       npm install
+      #       echo ${{ env.DOCKER_IMAGE }}
+
+      # - name: Run unit tests
+      #   run: |
+      #       npm run test
+      #   env:
+      #       NODE_ENV: test
+      #       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      #       LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+      #       LOG_DIR: './logs'
+      #       ENABLE_FILE_LOGGING: ${{ vars.ENABLE_FILE_LOGGING }}
+
+      #       PORT: ${{ vars.PORT }}
+
+  build-and-push:
+    name: Dockerizing
+    needs: initial-setup
+    runs-on: ubuntu-latest
+    environment: Production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get image version
+        id: get-version
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.get-version.outputs.version }}
+            ${{ env.DOCKER_IMAGE }}:latest
+
+  containerizing:
+    name: Run Container
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: Production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Get version
+        id: get-version
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "FULL_IMAGE=${{ env.DOCKER_IMAGE }}:$VERSION" >> "$GITHUB_ENV"
+
+      - name: Deploy via SSH
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} /bin/bash << 'EOF'
+          echo '${{ secrets.PAT_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          echo "📦 Pulling image: ${{ env.FULL_IMAGE }}"
+
+
+          if ! docker pull ${{ env.FULL_IMAGE }}; then
+            echo '⚠️ Failed to pull versioned image, fallback to latest'
+            docker pull ${{ env.DOCKER_IMAGE }}:latest
+            FULL_IMAGE=${{ env.DOCKER_IMAGE }}:latest
+          fi
+
+          if docker container inspect kedinasan-backend-dev >/dev/null 2>&1; then
+            echo "🛑 Stopping and removing existing container..."
+            docker container stop kedinasan-backend-dev
+            docker container rm kedinasan-backend-dev
+          else
+            echo "✅ No existing container named kedinasan-backend-dev found."
+          fi
+
+          docker run -d \
+            --name cinema-online-be-prod \
+            -e PATH_FILE_FILM='${{ secrets.PATH_FILE_FILM }}' \
+            -e PATH_FILE_PP='${{ secrets.PATH_FILE_PP }}' \
+            -e PATH_FILE_TF='${{ secrets.PATH_FILE_TF }}' \
+            -e TOKEN_KEY='${{ secrets.TOKEN_KEY }}' \
+            -e PORT='${{ secrets.PORT }}' \
+            -e DATABASE_HOST='${{ secrets.DATABASE_HOST }}' \
+            -e DATABASE_PORT='${{ secrets.DATABASE_PORT }}' \
+            -e DATABASE_NAME='${{ secrets.DATABASE_NAME }}' \
+            -e DATABASE_DIALECT='${{ secrets.DATABASE_DIALECT }}' \
+            -e DATABASE_USERNAME='${{ secrets.DATABASE_USERNAME }}' \
+            -e DATABASE_PASSWORD='${{ secrets.DATABASE_PASSWORD }}' \
+            -e CLOUDINARY_NAME='${{ secrets.CLOUDINARY_NAME }}' \
+            -e CLOUDINARY_API_KEY='${{ secrets.CLOUDINARY_API_KEY }}' \
+            -e CLOUDINARY_API_SECRET='${{ secrets.CLOUDINARY_API_SECRET }}' \
+            -p ${{ vars.PORT }}:3000 \
+            # -v "${{ vars.LOG_DIR }}:${{vars.LOG_DIR}}" \
+            # --health-cmd='curl --fail http://localhost:3000/api/v1/healtcheck || exit 1' \
+            # --health-interval=60s \
+            # --health-timeout=10s \
+            # --health-retries=3 \
+            --restart unless-stopped \
+            --label logging=promtail \
+            --label promtail.enable=true \
+            --label environment=production \
+            --network monitoring-network \
+            --network cinema-online-be-network \
+            --memory=1g --cpus="0.5" \
+            --init \
+            ${{ env.FULL_IMAGE }}
+          EOF
