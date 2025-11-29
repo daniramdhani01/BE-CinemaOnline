@@ -145,7 +145,7 @@ jobs:
             -e CLOUDINARY_NAME='${{ secrets.CLOUDINARY_NAME }}' \
             -e CLOUDINARY_API_KEY='${{ secrets.CLOUDINARY_API_KEY }}' \
             -e CLOUDINARY_API_SECRET='${{ secrets.CLOUDINARY_API_SECRET }}' \
-            -p ${{ vars.PORT }}:${{ vars.PORT }} \
+            -p 127.0.0.1:${{ vars.PORT }}:${{ vars.PORT }} \
             --restart unless-stopped \
             --label logging=promtail \
             --label promtail.enable=true \
