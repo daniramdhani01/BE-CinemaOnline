@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const joi = require('joi'); //package validation data
 const { tb_films, tb_transac, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
-const { uploadFromBuffer } = require("../utils/cloudinary");
+const { uploadFromBuffer, destroyAsset } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
@@ -10,6 +10,25 @@ const CLOUDINARY_BASE_URL = process.env.CLOUDINARY_BASE_URL || '';
 const FILM_FOLDER = process.env.PATH_FILE_FILM || '';
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
 const trimSlashes = (value = '') => value.replace(/^\/+|\/+$/g, '');
+const stripExtension = (value = '') => value.replace(/\.[^.]+$/, '');
+const toPublicId = (value, folder = FILM_FOLDER) => {
+        if (!value) return null;
+        const folderPart = trimSlashes(folder);
+        let id = value;
+
+        if (isExternalUrl(value)) {
+                const match = value.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.\/]+)?$/);
+                if (!match) return null;
+                id = match[1];
+        }
+
+        id = id.replace(/^\/+/, '');
+        if (folderPart && !id.startsWith(folderPart)) {
+                id = `${folderPart}/${id}`;
+        }
+
+        return stripExtension(id);
+};
 const resolveFileUrl = (value, folder = FILM_FOLDER) => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
@@ -284,9 +303,18 @@ exports.showMyList = withErrorLogging(async (req, res) => {
 exports.deleteFilm = withErrorLogging(async (req, res) => {
         const { id } = req.params
 
-        await tb_films.destroy({
-            where: { id }
-        })
+        const film = await tb_films.findOne({ where: { id } });
+
+        if (film) {
+                const thumbPublicId = toPublicId(film.thumbnail);
+                const posterPublicId = toPublicId(film.poster);
+                await Promise.all([
+                        thumbPublicId ? destroyAsset(thumbPublicId) : Promise.resolve(),
+                        posterPublicId ? destroyAsset(posterPublicId) : Promise.resolve(),
+                ]);
+        }
+
+        await tb_films.destroy({ where: { id } })
 
         res.send({
             status: 'success',

@@ -12,6 +12,7 @@ const {
     reject,
     pending,
     historyTransac,
+    deleteTF,
 } = require('../controllers/transac')
 
 const {
@@ -51,6 +52,7 @@ router.patch('/film/:id', auth, uploadFilm('thumbnail', 'poster'), editFilm)
 router.get('/incoming-transac', auth, showTF)
 router.get('/transac', auth, historyTransac)
 router.post('/transac', auth, uploadTransfer('image'), addTF)
+router.delete('/transac/:id', auth, deleteTF)
 router.patch('/approve/:id', auth, approve)
 router.patch('/reject/:id', auth, reject)
 router.patch('/pending/:id', auth, pending)

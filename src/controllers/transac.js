@@ -1,7 +1,7 @@
 const joi = require('joi'); //package validation data
 const { tb_transac, tb_films, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
-const { uploadFromBuffer } = require("../utils/cloudinary");
+const { uploadFromBuffer, destroyAsset } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
@@ -9,6 +9,25 @@ const CLOUDINARY_BASE_URL = process.env.CLOUDINARY_BASE_URL || '';
 const TRANSFER_FOLDER = process.env.PATH_FILE_TF || '';
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
 const trimSlashes = (value = '') => value.replace(/^\/+|\/+$/g, '');
+const stripExtension = (value = '') => value.replace(/\.[^.]+$/, '');
+const toPublicId = (value, folder = TRANSFER_FOLDER) => {
+        if (!value) return null;
+        const folderPart = trimSlashes(folder);
+        let id = value;
+
+        if (isExternalUrl(value)) {
+                const match = value.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.\/]+)?$/);
+                if (!match) return null;
+                id = match[1];
+        }
+
+        id = id.replace(/^\/+/, '');
+        if (folderPart && !id.startsWith(folderPart)) {
+                id = `${folderPart}/${id}`;
+        }
+
+        return stripExtension(id);
+};
 const resolveFileUrl = (value, folder = TRANSFER_FOLDER) => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
@@ -232,3 +251,28 @@ exports.pending = withErrorLogging(async (req, res) => {
             }
         })
 }, 'pending');
+
+exports.deleteTF = withErrorLogging(async (req, res) => {
+        const { id } = req.params;
+
+        const transac = await tb_transac.findOne({ where: { id } });
+
+        if (!transac) {
+                return res.status(404).send({
+                        status: 'failed',
+                        message: 'transaction not found'
+                });
+        }
+
+        const publicId = toPublicId(transac.buktiTF);
+        if (publicId) {
+                await destroyAsset(publicId);
+        }
+
+        await tb_transac.destroy({ where: { id } });
+
+        res.send({
+                status: 'success',
+                message: 'transaction deleted'
+        });
+}, 'deleteTF');

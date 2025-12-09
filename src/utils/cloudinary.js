@@ -18,5 +18,11 @@ const uploadFromBuffer = (fileBuffer, options = {}) => new Promise((resolve, rej
     stream.end(fileBuffer);
 });
 
+const destroyAsset = (publicId, options = {}) => {
+    if (!publicId) return Promise.resolve(null);
+    return cloudinary.uploader.destroy(publicId, options);
+};
+
 module.exports = cloudinary;
 module.exports.uploadFromBuffer = uploadFromBuffer;
+module.exports.destroyAsset = destroyAsset;
