@@ -14,11 +14,13 @@ const resolveFileUrl = (value, basePath = '') => {
 
 const uploadImageBuffer = async (file, folder) => {
         if (!file) return null;
+        const publicId = file.filename || (file.originalname ? file.originalname.replace(/\s/g, '') : undefined);
         return uploadFromBuffer(file.buffer, {
                 folder,
                 use_filename: true,
                 unique_filename: false,
-                public_id: file.originalname ? file.originalname.replace(/\s/g, '') : undefined,
+                public_id: publicId,
+                overwrite: true,
                 resource_type: 'auto',
         });
 };
@@ -59,15 +61,15 @@ exports.addFilm = withErrorLogging(async (req, res) => {
             });
         }
 
-        const [thumbnailUpload, posterUpload] = await Promise.all([
+        await Promise.all([
             uploadImageBuffer(thumbnailFile, "cinema-online/film"),
             posterFile ? uploadImageBuffer(posterFile, "cinema-online/film") : Promise.resolve(null),
         ]);
 
         const addFilm = await tb_films.create({
             ...data,
-            thumbnail: thumbnailUpload?.secure_url,
-            poster: posterUpload?.secure_url || null,
+            thumbnail: thumbnailFile.filename,
+            poster: posterFile ? posterFile.filename : null,
         })
 
         const film = await tb_films.findOne({
@@ -119,13 +121,13 @@ exports.editFilm = withErrorLogging(async (req, res) => {
         const payload = { ...data };
 
         if (thumbnailFile) {
-            const thumbnailUpload = await uploadImageBuffer(thumbnailFile, "cinema-online/film");
-            payload.thumbnail = thumbnailUpload?.secure_url;
+            await uploadImageBuffer(thumbnailFile, "cinema-online/film");
+            payload.thumbnail = thumbnailFile.filename;
         }
 
         if (posterFile) {
-            const posterUpload = await uploadImageBuffer(posterFile, "cinema-online/film");
-            payload.poster = posterUpload?.secure_url;
+            await uploadImageBuffer(posterFile, "cinema-online/film");
+            payload.poster = posterFile.filename;
         }
 
         await tb_films.update(payload, {

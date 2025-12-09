@@ -60,11 +60,14 @@ exports.addTF = withErrorLogging(async (req, res) => {
             })
         }
 
-        const uploadedProof = await uploadFromBuffer(proofImage.buffer, {
+        const proofName = proofImage.filename || (proofImage.originalname ? proofImage.originalname.replace(/\s/g, '') : undefined);
+
+        await uploadFromBuffer(proofImage.buffer, {
             folder: "cinema-online/transfer",
             use_filename: true,
             unique_filename: false,
-            public_id: proofImage.originalname ? proofImage.originalname.replace(/\s/g, '') : undefined,
+            public_id: proofName,
+            overwrite: true,
             resource_type: 'auto',
         });
 
@@ -72,7 +75,7 @@ exports.addTF = withErrorLogging(async (req, res) => {
             idFilm: data.idFilm,
             iduser: id,
             accountNum: data.accountNum,
-            buktiTF: uploadedProof?.secure_url
+            buktiTF: proofName
         })
 
         res.send({

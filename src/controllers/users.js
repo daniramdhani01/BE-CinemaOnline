@@ -185,23 +185,21 @@ exports.editUser = withErrorLogging(async (req, res) => {
 
         // console.log(newData)
 
-        let uploadedImage;
-        if (req.file) {
-            uploadedImage = await uploadFromBuffer(req.file.buffer, {
-                folder: "cinema-online/photoProfile",
-                use_filename: true,
-                unique_filename: false,
-                public_id: req.file.originalname ? req.file.originalname.replace(/\s/g, '') : undefined,
-                resource_type: 'auto',
-            });
-        }
-
         const payload = {
                 ...newData,
         };
 
-        if (uploadedImage?.secure_url) {
-                payload.image = uploadedImage.secure_url;
+        if (req.file) {
+                const publicId = req.file.filename || (req.file.originalname ? req.file.originalname.replace(/\s/g, '') : undefined);
+                await uploadFromBuffer(req.file.buffer, {
+                        folder: "cinema-online/photoProfile",
+                        use_filename: true,
+                        unique_filename: false,
+                        public_id: publicId,
+                        overwrite: true,
+                        resource_type: 'auto',
+                });
+                payload.image = req.file.filename;
         }
 
         await tb_users.update(payload, {

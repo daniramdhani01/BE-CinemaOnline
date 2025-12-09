@@ -1,6 +1,17 @@
 // import package here
 const multer = require('multer');
 
+const sanitizeName = (name = '') => name.replace(/\s/g, '');
+const generateFilmFilename = (file) => `${file.fieldname}-${Date.now()}-${sanitizeName(file.originalname)}`;
+const generateGenericFilename = (file) => `${Date.now()}-${sanitizeName(file.originalname)}`;
+const assignFilenames = (files, generator) => {
+    if (!files) return;
+    const list = Array.isArray(files) ? files : Object.values(files).flat();
+    list.forEach((file) => {
+        file.filename = generator(file);
+    });
+};
+
 exports.uploadFilm = (imageFile, imageFile2) => {
     const storage = multer.memoryStorage();
 
@@ -66,6 +77,7 @@ exports.uploadFilm = (imageFile, imageFile2) => {
                 }
                 return res.status(400).send(err);
             }
+            assignFilenames(req.files, generateFilmFilename);
             return next();
         });
     };
@@ -121,6 +133,7 @@ exports.uploadTransfer = (imageFile) => {
                 }
                 return res.send(err);
             }
+            assignFilenames(req.file ? [req.file] : null, generateGenericFilename);
             return next();
         });
     };
@@ -174,6 +187,7 @@ exports.uploadPhotoProfile = (imageFile) => {
                 }
                 return res.status(400).send(err);
             }
+            assignFilenames(req.file ? [req.file] : null, generateGenericFilename);
             return next();
         });
     };
