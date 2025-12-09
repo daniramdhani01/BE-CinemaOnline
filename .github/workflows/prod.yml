@@ -131,9 +131,10 @@ jobs:
 
           docker run -d \
             --name cinema-online-be-prod \
-            -e PATH_FILE_FILM='${{ secrets.PATH_FILE_FILM }}' \
-            -e PATH_FILE_PP='${{ secrets.PATH_FILE_PP }}' \
-            -e PATH_FILE_TF='${{ secrets.PATH_FILE_TF }}' \
+            -e CLOUDINARY_BASE_URL='${{ vars.CLOUDINARY_BASE_URL }}' \
+            -e PATH_FILE_FILM='${{ vars.PATH_FILE_FILM }}' \
+            -e PATH_FILE_PP='${{ vars.PATH_FILE_PP }}' \
+            -e PATH_FILE_TF='${{ vars.PATH_FILE_TF }}' \
             -e TOKEN_KEY='${{ secrets.TOKEN_KEY }}' \
             -e PORT='${{ vars.PORT }}' \
             -e DATABASE_HOST='${{ secrets.DATABASE_HOST }}' \

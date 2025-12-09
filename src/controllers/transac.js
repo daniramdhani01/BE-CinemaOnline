@@ -5,12 +5,25 @@ const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
-const stripCloudVersion = (basePath = '') => basePath.replace(/\/v\d+\//, '/');
-const resolveFileUrl = (value, basePath = '') => {
+const CLOUDINARY_BASE_URL = process.env.CLOUDINARY_BASE_URL || '';
+const TRANSFER_FOLDER = process.env.PATH_FILE_TF || '';
+const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
+const trimSlashes = (value = '') => value.replace(/^\/+|\/+$/g, '');
+const resolveFileUrl = (value, folder = TRANSFER_FOLDER) => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
-        const cleanBase = stripCloudVersion(basePath || '');
-        return `${cleanBase}${value}`;
+        const base = trimTrailingSlash(CLOUDINARY_BASE_URL);
+        const folderPart = trimSlashes(folder);
+        if (base && folderPart) {
+                return [base, folderPart, value].filter(Boolean).join('/');
+        }
+        if (base) {
+                return [base, value].join('/');
+        }
+        if (folderPart) {
+                return [folderPart, value].join('/');
+        }
+        return value;
 };
 
 exports.addTF = withErrorLogging(async (req, res) => {
@@ -65,7 +78,7 @@ exports.addTF = withErrorLogging(async (req, res) => {
         const proofName = proofImage.filename || (proofImage.originalname ? proofImage.originalname.replace(/\s/g, '') : undefined);
 
         const uploadedProof = await uploadFromBuffer(proofImage.buffer, {
-            folder: "cinema-online/transfer",
+            folder: TRANSFER_FOLDER,
             use_filename: true,
             unique_filename: false,
             public_id: proofName,
@@ -77,7 +90,7 @@ exports.addTF = withErrorLogging(async (req, res) => {
             idFilm: data.idFilm,
             iduser: id,
             accountNum: data.accountNum,
-            buktiTF: proofName
+            buktiTF: uploadedProof?.secure_url || proofName
         })
 
         res.send({

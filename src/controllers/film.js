@@ -6,12 +6,25 @@ const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
-const stripCloudVersion = (basePath = '') => basePath.replace(/\/v\d+\//, '/');
-const resolveFileUrl = (value, basePath = '') => {
+const CLOUDINARY_BASE_URL = process.env.CLOUDINARY_BASE_URL || '';
+const FILM_FOLDER = process.env.PATH_FILE_FILM || '';
+const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
+const trimSlashes = (value = '') => value.replace(/^\/+|\/+$/g, '');
+const resolveFileUrl = (value, folder = FILM_FOLDER) => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
-        const cleanBase = stripCloudVersion(basePath || '');
-        return `${cleanBase}${value}`;
+        const base = trimTrailingSlash(CLOUDINARY_BASE_URL);
+        const folderPart = trimSlashes(folder);
+        if (base && folderPart) {
+                return [base, folderPart, value].filter(Boolean).join('/');
+        }
+        if (base) {
+                return [base, value].join('/');
+        }
+        if (folderPart) {
+                return [folderPart, value].join('/');
+        }
+        return value;
 };
 
 const uploadImageBuffer = async (file, folder) => {
@@ -63,15 +76,15 @@ exports.addFilm = withErrorLogging(async (req, res) => {
             });
         }
 
-        await Promise.all([
-            uploadImageBuffer(thumbnailFile, "cinema-online/film"),
-            posterFile ? uploadImageBuffer(posterFile, "cinema-online/film") : Promise.resolve(null),
+        const [thumbnailUpload, posterUpload] = await Promise.all([
+            uploadImageBuffer(thumbnailFile, FILM_FOLDER),
+            posterFile ? uploadImageBuffer(posterFile, FILM_FOLDER) : Promise.resolve(null),
         ]);
 
         const addFilm = await tb_films.create({
             ...data,
-            thumbnail: thumbnailFile.filename,
-            poster: posterFile ? posterFile.filename : null,
+            thumbnail: thumbnailUpload?.secure_url || thumbnailFile.filename,
+            poster: posterUpload?.secure_url || (posterFile ? posterFile.filename : null),
         })
 
         const film = await tb_films.findOne({
@@ -123,13 +136,13 @@ exports.editFilm = withErrorLogging(async (req, res) => {
         const payload = { ...data };
 
         if (thumbnailFile) {
-            await uploadImageBuffer(thumbnailFile, "cinema-online/film");
-            payload.thumbnail = thumbnailFile.filename;
+            const thumbnailUpload = await uploadImageBuffer(thumbnailFile, FILM_FOLDER);
+            payload.thumbnail = thumbnailUpload?.secure_url || thumbnailFile.filename;
         }
 
         if (posterFile) {
-            await uploadImageBuffer(posterFile, "cinema-online/film");
-            payload.poster = posterFile.filename;
+            const posterUpload = await uploadImageBuffer(posterFile, FILM_FOLDER);
+            payload.poster = posterUpload?.secure_url || posterFile.filename;
         }
 
         await tb_films.update(payload, {
