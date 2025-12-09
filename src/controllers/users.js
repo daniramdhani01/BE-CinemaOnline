@@ -6,10 +6,12 @@ const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const stripCloudVersion = (basePath = '') => basePath.replace(/\/v\d+\//, '/');
 const resolveFileUrl = (value, basePath = '') => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
-        return `${basePath}${value}`;
+        const cleanBase = stripCloudVersion(basePath || '');
+        return `${cleanBase}${value}`;
 };
 
 // ===============
@@ -191,7 +193,7 @@ exports.editUser = withErrorLogging(async (req, res) => {
 
         if (req.file) {
                 const publicId = req.file.filename || (req.file.originalname ? req.file.originalname.replace(/\s/g, '') : undefined);
-                await uploadFromBuffer(req.file.buffer, {
+                const uploadedImage = await uploadFromBuffer(req.file.buffer, {
                         folder: "cinema-online/photoProfile",
                         use_filename: true,
                         unique_filename: false,

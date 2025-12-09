@@ -6,10 +6,12 @@ const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const stripCloudVersion = (basePath = '') => basePath.replace(/\/v\d+\//, '/');
 const resolveFileUrl = (value, basePath = '') => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
-        return `${basePath}${value}`;
+        const cleanBase = stripCloudVersion(basePath || '');
+        return `${cleanBase}${value}`;
 };
 
 const uploadImageBuffer = async (file, folder) => {

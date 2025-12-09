@@ -5,10 +5,12 @@ const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
 
 const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const stripCloudVersion = (basePath = '') => basePath.replace(/\/v\d+\//, '/');
 const resolveFileUrl = (value, basePath = '') => {
         if (!value) return value;
         if (isExternalUrl(value)) return value;
-        return `${basePath}${value}`;
+        const cleanBase = stripCloudVersion(basePath || '');
+        return `${cleanBase}${value}`;
 };
 
 exports.addTF = withErrorLogging(async (req, res) => {
@@ -62,7 +64,7 @@ exports.addTF = withErrorLogging(async (req, res) => {
 
         const proofName = proofImage.filename || (proofImage.originalname ? proofImage.originalname.replace(/\s/g, '') : undefined);
 
-        await uploadFromBuffer(proofImage.buffer, {
+        const uploadedProof = await uploadFromBuffer(proofImage.buffer, {
             folder: "cinema-online/transfer",
             use_filename: true,
             unique_filename: false,
