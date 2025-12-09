@@ -166,13 +166,10 @@ exports.showTF = withErrorLogging(async (req, res) => {
                         as: 'user',
                         attributes: ['fullname']
                     },
-                ]
+                ],
+                order: [['createdAt', 'DESC']]
             }
         )
-
-        transac.sort((a, b) => {
-            return b.createdAt - a.createdAt
-        })
 
         transac.map((item) => {
             item.buktiTF = resolveFileUrl(item.buktiTF, process.env.PATH_FILE_TF)

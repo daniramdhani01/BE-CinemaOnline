@@ -195,7 +195,7 @@ exports.editFilm = withErrorLogging(async (req, res) => {
 exports.showFilm = withErrorLogging(async (req, res) => {
         const film = await tb_films.findAll({
             order: [
-                ['createdAt', 'ASC']  // Ubah 'name' dengan kolom yang ingin diurutkan
+                ['createdAt', 'DESC']
               ]
         })
 
@@ -276,11 +276,10 @@ exports.showMyList = withErrorLogging(async (req, res) => {
             include: {
                 model: tb_films,
                 as: 'film',
-            }
-        })
-
-        mylist.sort((a, b) => {
-            return b.createdAt - a.createdAt
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ]
         })
 
         mylist.map((item) => {
