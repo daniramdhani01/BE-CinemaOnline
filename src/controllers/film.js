@@ -2,8 +2,26 @@ const jwt = require('jsonwebtoken');
 const joi = require('joi'); //package validation data
 const { tb_films, tb_transac, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
-const cloudinary = require("../utils/cloudinary");
+const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
+
+const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const resolveFileUrl = (value, basePath = '') => {
+        if (!value) return value;
+        if (isExternalUrl(value)) return value;
+        return `${basePath}${value}`;
+};
+
+const uploadImageBuffer = async (file, folder) => {
+        if (!file) return null;
+        return uploadFromBuffer(file.buffer, {
+                folder,
+                use_filename: true,
+                unique_filename: false,
+                public_id: file.originalname ? file.originalname.replace(/\s/g, '') : undefined,
+                resource_type: 'auto',
+        });
+};
 
 // ============
 // add film
@@ -11,8 +29,6 @@ const { withErrorLogging } = require('../middlewares/logger');
 exports.addFilm = withErrorLogging(async (req, res) => {
 
         const data = req.body
-
-        console.log(req.files)
 
         const schema = joi.object({
             title: joi.string().required(),
@@ -33,45 +49,35 @@ exports.addFilm = withErrorLogging(async (req, res) => {
             })
         }
 
-        let addFilm
+        const thumbnailFile = req.files?.thumbnail?.[0];
+        const posterFile = req.files?.poster?.[0];
 
-        if (!req.files.poster) {
-            addFilm = await tb_films.create({
-                ...data,
-                thumbnail: req.files.thumbnail[0].filename,
-            })
-
-            const result = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
-                folder: "cinema-online/film",
-                use_filename: true,
-                unique_filename: false,
-            });
-
-        } else {
-            addFilm = await tb_films.create({
-                ...data,
-                thumbnail: req.files.thumbnail[0].filename,
-                poster: req.files.poster[0].filename,
-            })
-
-            const result = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
-                folder: "cinema-online/film",
-                use_filename: true,
-                unique_filename: false,
-            });
-
-            const resultPoster = await cloudinary.uploader.upload(req.files.poster[0].path, {
-                folder: "cinema-online/film",
-                use_filename: true,
-                unique_filename: false,
+        if (!thumbnailFile) {
+            return res.status(400).send({
+                status: 'failed',
+                message: 'Please upload a thumbnail',
             });
         }
+
+        const [thumbnailUpload, posterUpload] = await Promise.all([
+            uploadImageBuffer(thumbnailFile, "cinema-online/film"),
+            posterFile ? uploadImageBuffer(posterFile, "cinema-online/film") : Promise.resolve(null),
+        ]);
+
+        const addFilm = await tb_films.create({
+            ...data,
+            thumbnail: thumbnailUpload?.secure_url,
+            poster: posterUpload?.secure_url || null,
+        })
 
         const film = await tb_films.findOne({
             where: {
                 id: addFilm.id
             }
         })
+
+        film.thumbnail = resolveFileUrl(film.thumbnail, process.env.PATH_FILE_FILM);
+        film.poster = resolveFileUrl(film.poster, process.env.PATH_FILE_FILM);
 
         res.send({
             status: 'success',
@@ -107,31 +113,36 @@ exports.editFilm = withErrorLogging(async (req, res) => {
             })
         }
 
-        if (req.file) {
-            const updateFilm = await tb_films.update({
-                ...data,
-                thumbnail: req.file.filename,
-            }, {
-                where: {
-                    id
-                }
-            })
-        } else {
-            const updateFilm = await tb_films.update({
-                ...data,
-                // thumbnail: req.file.filename,
-            }, {
-                where: {
-                    id
-                }
-            })
+        const thumbnailFile = req.files?.thumbnail?.[0];
+        const posterFile = req.files?.poster?.[0];
+
+        const payload = { ...data };
+
+        if (thumbnailFile) {
+            const thumbnailUpload = await uploadImageBuffer(thumbnailFile, "cinema-online/film");
+            payload.thumbnail = thumbnailUpload?.secure_url;
         }
+
+        if (posterFile) {
+            const posterUpload = await uploadImageBuffer(posterFile, "cinema-online/film");
+            payload.poster = posterUpload?.secure_url;
+        }
+
+        await tb_films.update(payload, {
+                where: {
+                        id
+                }
+        })
 
         const film = await tb_films.findOne({
             where: {
                 id
             }
         })
+
+        film.thumbnail = resolveFileUrl(film.thumbnail, process.env.PATH_FILE_FILM);
+        film.poster = resolveFileUrl(film.poster, process.env.PATH_FILE_FILM);
+        film.price = rupiah.convert(film.price)
 
         res.send({
             status: 'success',
@@ -157,8 +168,8 @@ exports.showFilm = withErrorLogging(async (req, res) => {
         // })
 
         film.map((item) => {
-            item.thumbnail = process.env.PATH_FILE_FILM + item.thumbnail
-            item.poster = process.env.PATH_FILE_FILM + item.poster
+            item.thumbnail = resolveFileUrl(item.thumbnail, process.env.PATH_FILE_FILM)
+            item.poster = resolveFileUrl(item.poster, process.env.PATH_FILE_FILM)
             item.price = rupiah.convert(item.price)
         })
 
@@ -203,7 +214,8 @@ exports.selectFilm = withErrorLogging(async (req, res) => {
             })()
         ])
 
-        film.thumbnail = process.env.PATH_FILE_FILM + film.thumbnail
+        film.thumbnail = resolveFileUrl(film.thumbnail, process.env.PATH_FILE_FILM)
+        film.poster = resolveFileUrl(film.poster, process.env.PATH_FILE_FILM)
         film.price = rupiah.convert(film.price)
 
         res.send({
@@ -236,7 +248,8 @@ exports.showMyList = withErrorLogging(async (req, res) => {
         })
 
         mylist.map((item) => {
-            item.film.thumbnail = process.env.PATH_FILE_FILM + item.film.thumbnail
+            item.film.thumbnail = resolveFileUrl(item.film.thumbnail, process.env.PATH_FILE_FILM)
+            item.film.poster = resolveFileUrl(item.film.poster, process.env.PATH_FILE_FILM)
             item.film.price = rupiah.convert(item.film.price)
         })
 

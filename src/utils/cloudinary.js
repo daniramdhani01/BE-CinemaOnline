@@ -6,4 +6,17 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Upload a file buffer without writing to disk.
+const uploadFromBuffer = (fileBuffer, options = {}) => new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+        if (error) {
+            return reject(error);
+        }
+        return resolve(result);
+    });
+
+    stream.end(fileBuffer);
+});
+
 module.exports = cloudinary;
+module.exports.uploadFromBuffer = uploadFromBuffer;

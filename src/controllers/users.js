@@ -2,8 +2,15 @@ const joi = require('joi'); //package validation data
 const bcrypt = require('bcrypt') //package encryption data
 const jwt = require('jsonwebtoken') //package token
 const { tb_users } = require('../../models')
-const cloudinary = require("../utils/cloudinary");
+const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
+
+const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const resolveFileUrl = (value, basePath = '') => {
+        if (!value) return value;
+        if (isExternalUrl(value)) return value;
+        return `${basePath}${value}`;
+};
 
 // ===============
 // register
@@ -20,7 +27,7 @@ exports.showUser = withErrorLogging(async (req, res) => {
             }
         })
 
-        user.image = process.env.PATH_FILE_PP + user.image
+        user.image = resolveFileUrl(user.image, process.env.PATH_FILE_PP)
 
         res.send({
             status: 'success',
@@ -79,7 +86,7 @@ exports.regUser = withErrorLogging(async (req, res) => {
             email: newUser.email,
             fullname: newUser.fullname,
             isAdmin: newUser.isAdmin,
-            image: process.env.PATH_FILE_PP + newUser.image,
+            image: resolveFileUrl(newUser.image, process.env.PATH_FILE_PP),
         }
         const SECRET_KEY = process.env.TOKEN_KEY
         const token = jwt.sign(dataToken, SECRET_KEY)
@@ -92,7 +99,7 @@ exports.regUser = withErrorLogging(async (req, res) => {
                     email: newUser.email,
                     fullname: newUser.fullname,
                     isAdmin: newUser.isAdmin,
-                    image: process.env.PATH_FILE_PP + newUser.image,
+                    image: resolveFileUrl(newUser.image, process.env.PATH_FILE_PP),
                     token,
                 },
             },
@@ -150,7 +157,7 @@ exports.loginUser = withErrorLogging(async (req, res) => {
             fullname: userExist.fullname,
             email: userExist.email,
             isAdmin: userExist.isAdmin,
-            image: process.env.PATH_FILE_PP + userExist.image,
+            image: resolveFileUrl(userExist.image, process.env.PATH_FILE_PP),
         }
         const SECRET_KEY = process.env.TOKEN_KEY
         const token = jwt.sign(dataToken, SECRET_KEY)
@@ -163,7 +170,7 @@ exports.loginUser = withErrorLogging(async (req, res) => {
                     fullname: userExist.fullname,
                     email: userExist.email,
                     isAdmin: userExist.isAdmin,
-                    image: process.env.PATH_FILE_PP + userExist.image,
+                    image: resolveFileUrl(userExist.image, process.env.PATH_FILE_PP),
                     token,
                 },
             }
@@ -178,26 +185,30 @@ exports.editUser = withErrorLogging(async (req, res) => {
 
         // console.log(newData)
 
-        if (!req.file) {
-            await tb_users.update({
-                ...newData,
-                // image: req.file.filename,
-            }, {
-                where: {
-                    id
-                }
-            })
-        } else {
-            // console.log('file here:', req.file)
-            await tb_users.update({
-                ...newData,
-                image: req.file.filename,
-            }, {
-                where: {
-                    id
-                }
-            })
+        let uploadedImage;
+        if (req.file) {
+            uploadedImage = await uploadFromBuffer(req.file.buffer, {
+                folder: "cinema-online/photoProfile",
+                use_filename: true,
+                unique_filename: false,
+                public_id: req.file.originalname ? req.file.originalname.replace(/\s/g, '') : undefined,
+                resource_type: 'auto',
+            });
         }
+
+        const payload = {
+                ...newData,
+        };
+
+        if (uploadedImage?.secure_url) {
+                payload.image = uploadedImage.secure_url;
+        }
+
+        await tb_users.update(payload, {
+                where: {
+                        id
+                }
+        })
 
         const data = await tb_users.findOne({
             where: {
@@ -207,6 +218,8 @@ exports.editUser = withErrorLogging(async (req, res) => {
                 exclude: ['password', 'createdAt', 'updatedAt']
             }
         })
+
+        data.image = resolveFileUrl(data.image, process.env.PATH_FILE_PP)
 
         res.send({
             status: 'success',
@@ -241,7 +254,7 @@ exports.checkAuth = withErrorLogging(async (req, res) => {
                     fullname: user.fullname,
                     isAdmin: user.isAdmin,
                     email: user.email,
-                    image: process.env.PATH_FILE + user.image,
+                    image: resolveFileUrl(user.image, process.env.PATH_FILE_PP || process.env.PATH_FILE),
                 }
             },
         });

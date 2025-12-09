@@ -2,14 +2,7 @@
 const multer = require('multer');
 
 exports.uploadFilm = (imageFile, imageFile2) => {
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'uploads/film');
-        },
-        filename: function (req, file, cb) {
-            cb(null, file.fieldname + '-' + Date.now() + '-' + file.originalname.replace(/\s/g, ''));
-        },
-    });
+    const storage = multer.memoryStorage();
 
     const fileFilter = (req, file, cb) => {
         // if (file.fieldname === imageFile && imageFile2) {
@@ -33,7 +26,6 @@ exports.uploadFilm = (imageFile, imageFile2) => {
         limits: {
             fileSize: maxSize,
         },
-        // }).single(imageFile);
     }).fields([{ name: imageFile, maxCount: 1 }, { name: imageFile2, maxCount: 1 }])
 
     return (req, res, next) => {
@@ -80,14 +72,7 @@ exports.uploadFilm = (imageFile, imageFile2) => {
 };
 
 exports.uploadTransfer = (imageFile) => {
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'uploads/transfer');
-        },
-        filename: function (req, file, cb) {
-            cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, ''));
-        },
-    });
+    const storage = multer.memoryStorage();
 
     const fileFilter = (req, file, cb) => {
         if (file.fieldname === imageFile) {
@@ -143,14 +128,7 @@ exports.uploadTransfer = (imageFile) => {
 
 exports.uploadPhotoProfile = (imageFile) => {
     // console.log(imageFile)
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'uploads/photoProfile');
-        },
-        filename: function (req, file, cb) {
-            cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, ''));
-        },
-    });
+    const storage = multer.memoryStorage();
 
     const fileFilter = (req, file, cb) => {
         if (file.fieldname === imageFile) {

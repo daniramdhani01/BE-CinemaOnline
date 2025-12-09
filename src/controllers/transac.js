@@ -1,8 +1,15 @@
 const joi = require('joi'); //package validation data
 const { tb_transac, tb_films, tb_users } = require('../../models')
 const rupiah = require('rupiah-format')
-const cloudinary = require("../utils/cloudinary");
+const { uploadFromBuffer } = require("../utils/cloudinary");
 const { withErrorLogging } = require('../middlewares/logger');
+
+const isExternalUrl = (value = '') => /^https?:\/\//i.test(value);
+const resolveFileUrl = (value, basePath = '') => {
+        if (!value) return value;
+        if (isExternalUrl(value)) return value;
+        return `${basePath}${value}`;
+};
 
 exports.addTF = withErrorLogging(async (req, res) => {
         const data = req.body
@@ -44,18 +51,29 @@ exports.addTF = withErrorLogging(async (req, res) => {
             })
         }
 
+        const proofImage = req.file;
+
+        if (!proofImage) {
+            return res.status(400).send({
+                status: 'failed',
+                message: 'Please upload transfer proof',
+            })
+        }
+
+        const uploadedProof = await uploadFromBuffer(proofImage.buffer, {
+            folder: "cinema-online/transfer",
+            use_filename: true,
+            unique_filename: false,
+            public_id: proofImage.originalname ? proofImage.originalname.replace(/\s/g, '') : undefined,
+            resource_type: 'auto',
+        });
+
         const tf = await tb_transac.create({
             idFilm: data.idFilm,
             iduser: id,
             accountNum: data.accountNum,
-            buktiTF: req.file.filename
+            buktiTF: uploadedProof?.secure_url
         })
-
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: "cinema-online/transfer",
-            use_filename: true,
-            unique_filename: false,
-        });
 
         res.send({
             status: 'success',
@@ -120,7 +138,7 @@ exports.showTF = withErrorLogging(async (req, res) => {
         })
 
         transac.map((item) => {
-            item.buktiTF = process.env.PATH_FILE_TF + item.buktiTF
+            item.buktiTF = resolveFileUrl(item.buktiTF, process.env.PATH_FILE_TF)
         })
 
         res.send({
